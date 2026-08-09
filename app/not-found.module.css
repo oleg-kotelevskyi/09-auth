@@ -1,0 +1,30 @@
+.main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 150px);
+  padding: 20px;
+  background-color: #fafafa;
+}
+
+.container {
+  max-width: 500px;
+  text-align: center;
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.title {
+  font-size: 2.2rem;
+  color: #dc3545;
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+
+.description {
+  font-size: 1.1rem;
+  color: #555555;
+  line-height: 1.5;
+}
