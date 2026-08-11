@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import * as Yup from 'yup';
-import { notesApi } from '../../lib/api';
-import { useNoteStore } from '../../lib/store/noteStore';
-import { CreateNoteInput } from '../../types/note';
-import css from './NoteForm.module.css';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import * as Yup from "yup";
+import { clientApi } from "@/lib/api/clientApi";
+import { useNoteStore } from "../../lib/store/noteStore";
+import { CreateNoteInput } from "../../types/note";
+import css from "./NoteForm.module.css";
 
 interface NoteFormProps {
   onCancel?: () => void;
@@ -20,7 +20,10 @@ const NoteSchema = Yup.object().shape({
     .required("Обов'язкове поле"),
   content: Yup.string().max(500, "Максимум 500 символів"),
   tag: Yup.string()
-    .oneOf(["Todo", "Work", "Personal", "Meeting", "Shopping"], "Невалідний тег")
+    .oneOf(
+      ["Todo", "Work", "Personal", "Meeting", "Shopping"],
+      "Невалідний тег",
+    )
     .required("Обов'язкове поле"),
 });
 
@@ -30,18 +33,22 @@ const NoteForm = ({ onCancel }: NoteFormProps) => {
 
   const { draft, setDraft, clearDraft } = useNoteStore();
 
-  const [errors, setErrors] = useState<{ title?: string; content?: string; tag?: string }>({});
+  const [errors, setErrors] = useState<{
+    title?: string;
+    content?: string;
+    tag?: string;
+  }>({});
 
   const createNoteMutation = useMutation({
-    mutationFn: (newNote: CreateNoteInput) => notesApi.create(newNote),
+    mutationFn: (newNote: CreateNoteInput) => clientApi.createNote(newNote),
     onSuccess: () => {
       clearDraft();
       queryClient.invalidateQueries({ queryKey: ["notes"] });
-      
+
       if (onCancel) {
         onCancel();
       } else {
-        router.push('/notes/filter/all');
+        router.push("/notes/filter/all");
       }
     },
   });
@@ -77,7 +84,7 @@ const NoteForm = ({ onCancel }: NoteFormProps) => {
           type="text"
           name="title"
           className={css.input}
-          value={draft.title} 
+          value={draft.title}
           onChange={(e) => setDraft({ title: e.target.value })}
         />
         {errors.title && <span className={css.error}>{errors.title}</span>}
@@ -90,7 +97,7 @@ const NoteForm = ({ onCancel }: NoteFormProps) => {
           name="content"
           rows={8}
           className={css.textarea}
-          value={draft.content} 
+          value={draft.content}
           onChange={(e) => setDraft({ content: e.target.value })}
         />
         {errors.content && <span className={css.error}>{errors.content}</span>}
@@ -102,7 +109,7 @@ const NoteForm = ({ onCancel }: NoteFormProps) => {
           id="tag"
           name="tag"
           className={css.select}
-          value={draft.tag} 
+          value={draft.tag}
           onChange={(e) => setDraft({ tag: e.target.value })}
         >
           <option value="Todo">Todo</option>
@@ -115,7 +122,9 @@ const NoteForm = ({ onCancel }: NoteFormProps) => {
       </div>
 
       {createNoteMutation.isError && (
-        <p className={css.serverError}>Failed to create note. Please try again.</p>
+        <p className={css.serverError}>
+          Failed to create note. Please try again.
+        </p>
       )}
 
       <div className={css.actions}>
@@ -139,7 +148,3 @@ const NoteForm = ({ onCancel }: NoteFormProps) => {
 };
 
 export default NoteForm;
-
-
-
-

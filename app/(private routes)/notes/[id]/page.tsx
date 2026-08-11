@@ -1,10 +1,10 @@
-import { Metadata } from 'next';
+import { Metadata } from "next";
 import {
   dehydrate,
   HydrationBoundary,
   QueryClient,
 } from "@tanstack/react-query";
-import { notesApi } from "@/lib/api";
+import { serverApi } from "@/lib/api/serverApi";
 import NoteDetailsClient from "./NoteDetails.client";
 
 export const dynamic = "force-dynamic";
@@ -13,15 +13,18 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { id } = await params;
-  
+
   try {
-    const note = await notesApi.fetchNoteById(id);
-    
-    const shortDescription = note.content.length > 150 
-      ? `${note.content.substring(0, 150)}...` 
-      : note.content;
+    const note = await serverApi.fetchNoteById(id);
+
+    const shortDescription =
+      note.content.length > 150
+        ? `${note.content.substring(0, 150)}...`
+        : note.content;
 
     return {
       title: note.title,
@@ -32,7 +35,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         url: `https://notehub.com{id}`,
         images: [
           {
-            url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
+            url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",
             width: 1200,
             height: 630,
             alt: note.title,
@@ -42,8 +45,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   } catch {
     return {
-      title: 'Note Details',
-      description: 'View note details on NoteHub.',
+      title: "Note Details",
+      description: "View note details on NoteHub.",
     };
   }
 }
@@ -55,7 +58,7 @@ export default async function NoteDetailsPage({ params }: PageProps) {
   try {
     await queryClient.prefetchQuery({
       queryKey: ["note", id],
-      queryFn: () => notesApi.fetchNoteById(id),
+      queryFn: () => serverApi.fetchNoteById(id),
     });
   } catch (error) {
     console.error(`Prefetch note ${id} failed during build:`, error);
@@ -67,4 +70,3 @@ export default async function NoteDetailsPage({ params }: PageProps) {
     </HydrationBoundary>
   );
 }
-

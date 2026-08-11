@@ -1,4 +1,4 @@
-import css from './SearchBox.module.css';
+import css from "./SearchBox.module.css";
 
 interface SearchBoxProps {
   onChange: (value: string) => void;
@@ -6,7 +6,11 @@ interface SearchBoxProps {
   defaultValue?: string;
 }
 
-export const SearchBox = ({ onChange, value, defaultValue }: SearchBoxProps) => {
+export const SearchBox = ({
+  onChange,
+  value,
+  defaultValue,
+}: SearchBoxProps) => {
   return (
     <div className={css.searchBox}>
       <input
@@ -22,4 +26,3 @@ export const SearchBox = ({ onChange, value, defaultValue }: SearchBoxProps) => 
 };
 
 export default SearchBox;
-
