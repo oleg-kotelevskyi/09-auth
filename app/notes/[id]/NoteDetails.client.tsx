@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { notesApi } from "../../../../lib/api";
+import { notesApi } from "../../../lib/api";
 import css from "./NoteDetails.module.css";
 
 export default function NoteDetailsClient() {
