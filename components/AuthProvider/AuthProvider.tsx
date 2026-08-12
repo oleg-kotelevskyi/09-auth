@@ -15,9 +15,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const sessionData = await clientApi.checkSession();
+        const response = await clientApi.checkSession();
+        const sessionData = response.data;
 
-        if (sessionData && (sessionData as { email?: string }).email) {
+        if (sessionData && sessionData.email) {
           const userData = (await clientApi.getMe()) as User;
           
           if (userData && userData.email) {
@@ -25,9 +26,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             return;
           }
         }
-        
         clearIsAuthenticated();
-      } catch {
+      } catch (error) {
+        console.error('AuthProvider session init failed:', error);
         clearIsAuthenticated();
       }
     };
@@ -36,7 +37,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [setUser, clearIsAuthenticated]);
 
   return <>{children}</>;
-}
+};
 
 export default AuthProvider;
-

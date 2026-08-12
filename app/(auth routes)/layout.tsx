@@ -1,35 +1,25 @@
-import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
-import React from "react";
+'use client';
+
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/lib/store/authStore';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
 }
 
-export default async function AuthLayout({ children }: AuthLayoutProps) {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get("session");
+export default function AuthLayout({ children }: AuthLayoutProps) {
+  const router = useRouter();
+  const { isAuthenticated } = useAuthStore();
 
-  if (sessionCookie) {
-    try {
-      const response = await fetch("https://notehub-api.goit.study", {
-        headers: {
-          Cookie: `session=${sessionCookie.value}`,
-        },
-        cache: "no-store",
-      });
+  useEffect(() => {
+    router.refresh();
 
-      if (response.ok && response.status === 200) {
-        const user = await response.json();
-
-        if (user && user.email) {
-          redirect("/notes/filter/all");
-        }
-      }
-    } catch (error) {
-      console.error("Auth proxy session verification failed:", error);
+    if (isAuthenticated) {
+      router.push('/notes/filter/all');
     }
-  }
+  }, [isAuthenticated, router]);
 
   return <>{children}</>;
 }
+

@@ -1,7 +1,9 @@
-import { cookies } from "next/headers";
-import api from "./api";
-import { Note } from "@/types/note";
-import { FetchNotesResponse, UserResponse } from "./clientApi";
+import { cookies } from 'next/headers';
+import { AxiosResponse } from 'axios';
+import api from './api';
+import { Note } from '@/types/note';
+import { User } from '@/types/user';
+import { FetchNotesResponse } from './clientApi';
 
 const getServerHeaders = async () => {
   const cookieStore = await cookies();
@@ -16,18 +18,18 @@ const getServerHeaders = async () => {
 export const serverApi = {
   fetchNotes: async (
     page: number = 1,
-    search: string = "",
+    search: string = '',
     perPage: number = 12,
-    tag: string = "",
+    tag: string = ''
   ): Promise<FetchNotesResponse> => {
     const queryParams: Record<string, string | number> = { page, perPage };
-    if (search.trim() !== "") queryParams.search = search.trim();
-    if (tag && tag.trim() !== "" && tag.toLowerCase() !== "all") {
+    if (search.trim() !== '') queryParams.search = search.trim();
+    if (tag && tag.trim() !== '' && tag.toLowerCase() !== 'all') {
       queryParams.tag = tag.trim();
     }
 
     const config = await getServerHeaders();
-    const { data } = await api.get<FetchNotesResponse>("/notes", {
+    const { data } = await api.get<FetchNotesResponse>('/notes', {
       ...config,
       params: queryParams,
     });
@@ -40,22 +42,17 @@ export const serverApi = {
     return data;
   },
 
-  getMe: async (): Promise<UserResponse> => {
+  getMe: async (): Promise<User> => {
     const config = await getServerHeaders();
-    const { data } = await api.get<UserResponse>("/users/me", config);
+    const { data } = await api.get<User>('/users/me', config);
     return data;
   },
 
-  checkSession: async (): Promise<UserResponse | null> => {
-    try {
-      const config = await getServerHeaders();
-      const { data } = await api.get<UserResponse | null>(
-        "/auth/session",
-        config,
-      );
-      return data;
-    } catch {
-      return null;
-    }
+  checkSession: async (): Promise<AxiosResponse<User | null>> => {
+    const config = await getServerHeaders();
+    const response = await api.get<User | null>('/auth/session', config);
+    return response;
   },
 };
+
+

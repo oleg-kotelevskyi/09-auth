@@ -7,60 +7,47 @@ import { isAxiosError } from "axios";
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get("session");
-
-    if (!sessionCookie) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
     const { data } = await api.get("/users/me", {
       headers: {
-        Cookie: `session=${sessionCookie.value}`,
+        Cookie: cookieStore.toString(),
       },
     });
 
     return NextResponse.json(data);
   } catch (error) {
-    logErrorResponse(error);
+    logErrorResponse(error, "GET /api/users/me");
     
     if (isAxiosError(error)) {
       return NextResponse.json(
-        { message: error.response?.data?.message || "Failed to fetch profile" },
+        error.response?.data || { message: "Something went wrong" },
         { status: error.response?.status || 500 }
       );
     }
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }
 
 export async function PATCH(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get("session");
-
-    if (!sessionCookie) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-
     const body = await request.json();
-
+    const cookieStore = await cookies();
+    
     const { data } = await api.patch("/users/me", body, {
       headers: {
-        Cookie: `session=${sessionCookie.value}`,
+        Cookie: cookieStore.toString(),
       },
     });
 
     return NextResponse.json(data);
   } catch (error) {
-    logErrorResponse(error);
+    logErrorResponse(error, "PATCH /api/users/me");
     
     if (isAxiosError(error)) {
       return NextResponse.json(
-        { message: error.response?.data?.message || "Failed to update profile" },
+        error.response?.data || { message: "Something went wrong" },
         { status: error.response?.status || 500 }
       );
     }
-    return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
   }
 }
+
 

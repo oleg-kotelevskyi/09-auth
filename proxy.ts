@@ -6,41 +6,54 @@ const publicRoutes = ['/sign-in', '/sign-up'];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sessionCookie = request.cookies.get('session');
+
+  const accessToken = request.cookies.get('accessToken');
+  const refreshToken = request.cookies.get('refreshToken');
 
   const isPrivateRoute = privateRoutes.some((route) => pathname.startsWith(route));
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
 
-  if (!sessionCookie) {
+  if (!accessToken && !refreshToken) {
     if (isPrivateRoute) {
       return NextResponse.redirect(new URL('/sign-in', request.url));
     }
     return NextResponse.next();
   }
 
-  try {
-    const response = await fetch('https://goit.study', {
-      headers: {
-        Cookie: `session=${sessionCookie.value}`,
-      },
-      cache: 'no-store',
-    });
+  if (accessToken && isPublicRoute) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
 
-    const isAuthenticated = response.ok && response.status === 200;
+  if (!accessToken && refreshToken) {
+    if (isPrivateRoute || isPublicRoute) {
+      try {
+        const refreshResponse = await fetch(new URL('/api/auth/session', request.url), {
+          headers: {
+            Cookie: `refreshToken=${refreshToken.value}`,
+          },
+          cache: 'no-store',
+        });
 
-    if (isAuthenticated) {
-      if (isPublicRoute) {
-        return NextResponse.redirect(new URL('/profile', request.url));
+        if (refreshResponse.ok) {
+          const nextResponse = isPublicRoute 
+            ? NextResponse.redirect(new URL('/', request.url))
+            : NextResponse.next();
+
+          const setCookieHeader = refreshResponse.headers.get('set-cookie');
+          if (setCookieHeader) {
+            nextResponse.headers.set('set-cookie', setCookieHeader);
+          }
+          return nextResponse;
+        }
+      } catch (error) {
+        console.error('Failed to refresh session in proxy:', error);
       }
-    } else {
-      if (isPrivateRoute) {
-        const nextResponse = NextResponse.redirect(new URL('/sign-in', request.url));
-        nextResponse.cookies.delete('session');
-        return nextResponse;
-      }
+
+      const badAuthResponse = NextResponse.redirect(new URL('/sign-in', request.url));
+      badAuthResponse.cookies.delete('accessToken');
+      badAuthResponse.cookies.delete('refreshToken');
+      return badAuthResponse;
     }
-  } catch (error) {
-    console.error('Proxy validation error:', error);
   }
 
   return NextResponse.next();
@@ -54,4 +67,5 @@ export const config = {
     '/sign-up',
   ],
 };
+
 
