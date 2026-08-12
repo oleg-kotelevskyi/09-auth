@@ -3,7 +3,7 @@ import {
   HydrationBoundary,
   QueryClient,
 } from "@tanstack/react-query";
-import { notesApi } from "@/lib/api";
+import { serverApi } from "@/lib/api/serverApi"; 
 import NotePreviewClient from "./NotePreview.client";
 
 export const dynamic = "force-dynamic";
@@ -19,10 +19,10 @@ export default async function NotePreview({ params }: PageProps) {
   try {
     await queryClient.prefetchQuery({
       queryKey: ["note", id],
-      queryFn: () => notesApi.fetchNoteById(id),
+      queryFn: () => serverApi.fetchNoteById(id),
     });
-  } catch (error) {
-    console.error(`Prefetch note ${id} failed in preview modal:`, error);
+  } catch {
+    console.error(`Prefetch note ${id} failed in preview modal.`);
   }
 
   return (
@@ -31,3 +31,4 @@ export default async function NotePreview({ params }: PageProps) {
     </HydrationBoundary>
   );
 }
+
