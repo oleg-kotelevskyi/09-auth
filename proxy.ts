@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { cookies } from 'next/headers';
 
 const privateRoutes = ['/profile', '/notes'];
 const publicRoutes = ['/sign-in', '/sign-up'];
@@ -7,8 +8,9 @@ const publicRoutes = ['/sign-in', '/sign-up'];
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const accessToken = request.cookies.get('accessToken');
-  const refreshToken = request.cookies.get('refreshToken');
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('accessToken');
+  const refreshToken = cookieStore.get('refreshToken');
 
   const isPrivateRoute = privateRoutes.some((route) => pathname.startsWith(route));
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
@@ -36,13 +38,52 @@ export async function proxy(request: NextRequest) {
 
         if (refreshResponse.ok) {
           const nextResponse = isPublicRoute 
-            ? NextResponse.redirect(new URL('/', request.url))
+            ? NextResponse.redirect(new URL('/', request.url)) 
             : NextResponse.next();
 
-          const setCookieHeader = refreshResponse.headers.get('set-cookie');
-          if (setCookieHeader) {
-            nextResponse.headers.set('set-cookie', setCookieHeader);
+          const setCookieHeaders = refreshResponse.headers.getSetCookie();
+          
+          if (setCookieHeaders && setCookieHeaders.length > 0) {
+            setCookieHeaders.forEach((cookieStr) => {
+              const parts = cookieStr.split(';').map(p => p.trim());
+              if (parts.length === 0) return;
+
+              const firstPart = parts[0];
+              const equalIndex = firstPart.indexOf('=');
+              if (equalIndex === -1) return;
+
+              const cookieName = firstPart.substring(0, equalIndex).trim();
+              const cookieValue = firstPart.substring(equalIndex + 1).trim();
+
+              if (!cookieName || ['path', 'expires', 'domain', 'max-age', 'secure', 'httponly', 'samesite'].includes(cookieName.toLowerCase())) {
+                return;
+              }
+
+              const options: {
+                httpOnly?: boolean;
+                path?: string;
+                secure?: boolean;
+                maxAge?: number;
+              } = {
+                httpOnly: cookieStr.toLowerCase().includes('httponly'),
+                path: '/',
+                secure: cookieStr.toLowerCase().includes('secure'),
+              };
+
+              parts.forEach((part) => {
+                const lowerPart = part.toLowerCase();
+                if (lowerPart.startsWith('path=')) {
+                  options.path = part.substring(5).trim();
+                }
+                if (lowerPart.startsWith('max-age=')) {
+                  options.maxAge = parseInt(part.substring(8).trim(), 10);
+                }
+              });
+
+              nextResponse.cookies.set(cookieName, cookieValue, options);
+            });
           }
+          
           return nextResponse;
         }
       } catch (error) {
@@ -67,5 +108,8 @@ export const config = {
     '/sign-up',
   ],
 };
+
+
+
 
 
