@@ -25,6 +25,11 @@ export async function GET() {
         { status: error.response?.status || 500 }
       );
     }
+    
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -49,8 +54,15 @@ export async function PATCH(request: Request) {
         { status: error.response?.status || 500 }
       );
     }
+    
+    return NextResponse.json(
+      { message: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
+
+
 
 
 

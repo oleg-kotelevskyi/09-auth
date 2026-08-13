@@ -3,6 +3,15 @@ import type { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { parseSetCookie } from 'cookie';
 
+interface SimpleCookie {
+  name?: string;
+  value?: string;
+  path?: string;
+  maxAge?: number;
+  httpOnly?: boolean;
+  secure?: boolean;
+}
+
 const privateRoutes = ['/profile', '/notes'];
 const publicRoutes = ['/sign-in', '/sign-up'];
 
@@ -42,36 +51,35 @@ export async function proxy(request: NextRequest) {
             ? NextResponse.redirect(new URL('/', request.url)) 
             : NextResponse.next();
 
-          const setCookieHeaders = refreshResponse.headers.getSetCookie();
+          const setCookieHeader = refreshResponse.headers.get('set-cookie');
           
-          if (setCookieHeaders && setCookieHeaders.length > 0) {
-            setCookieHeaders.forEach((cookieStr) => {
-              const parsed = parseSetCookie(cookieStr);
+          if (setCookieHeader) {
+            const cookieStrings = setCookieHeader.split(',').map(s => s.trim());
+
+            cookieStrings.forEach((cookieStr) => {
+
+              const cookieItem = parseSetCookie(cookieStr) as unknown as SimpleCookie;
               
-              const cookiesArray = Array.isArray(parsed) ? parsed : [parsed];
+              if (!cookieItem || !cookieItem.name) return;
 
-              cookiesArray.forEach((cookieItem) => {
-                const { name, value, path, maxAge, httpOnly, secure } = cookieItem;
+              const options: {
+                httpOnly?: boolean;
+                path?: string;
+                secure?: boolean;
+                maxAge?: number;
+              } = {
+                httpOnly: cookieItem.httpOnly,
+                path: cookieItem.path || '/',
+                secure: cookieItem.secure,
+              };
 
-                if (!name) return;
+              if (cookieItem.maxAge !== undefined) {
+                options.maxAge = cookieItem.maxAge;
+              }
 
-                const options: {
-                  httpOnly?: boolean;
-                  path?: string;
-                  secure?: boolean;
-                  maxAge?: number;
-                } = {
-                  httpOnly,
-                  path: path || '/',
-                  secure,
-                };
+              const targetValue = cookieItem.value || '';
 
-                if (maxAge !== undefined) {
-                  options.maxAge = maxAge;
-                }
-
-                nextResponse.cookies.set(name, value, options);
-              });
+              nextResponse.cookies.set(cookieItem.name, targetValue, options);
             });
           }
           
@@ -99,6 +107,14 @@ export const config = {
     '/sign-up',
   ],
 };
+
+
+
+
+
+
+
+
 
 
 
