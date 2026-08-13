@@ -1,7 +1,9 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from "next/server";
-import { api } from "@/lib/api/api"; 
+import { api } from "../../api";
 import { cookies } from "next/headers";
-import { logErrorResponse } from "@/app/_utils/utils"; 
+import { logErrorResponse } from "../../_utils/utils";
 import { isAxiosError } from "axios";
 
 export async function GET() {
@@ -23,11 +25,6 @@ export async function GET() {
         { status: error.response?.status || 500 }
       );
     }
-    
-    return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 }
-    );
   }
 }
 
@@ -52,13 +49,9 @@ export async function PATCH(request: Request) {
         { status: error.response?.status || 500 }
       );
     }
-    
-    return NextResponse.json(
-      { message: "Internal Server Error" },
-      { status: 500 }
-    );
   }
 }
+
 
 
 

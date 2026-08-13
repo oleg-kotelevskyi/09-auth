@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
+import { parseSetCookie } from 'cookie';
 
 const privateRoutes = ['/profile', '/notes'];
 const publicRoutes = ['/sign-in', '/sign-up'];
@@ -45,42 +46,32 @@ export async function proxy(request: NextRequest) {
           
           if (setCookieHeaders && setCookieHeaders.length > 0) {
             setCookieHeaders.forEach((cookieStr) => {
-              const parts = cookieStr.split(';').map(p => p.trim());
-              if (parts.length === 0) return;
+              const parsed = parseSetCookie(cookieStr);
+              
+              const cookiesArray = Array.isArray(parsed) ? parsed : [parsed];
 
-              const firstPart = parts[0];
-              const equalIndex = firstPart.indexOf('=');
-              if (equalIndex === -1) return;
+              cookiesArray.forEach((cookieItem) => {
+                const { name, value, path, maxAge, httpOnly, secure } = cookieItem;
 
-              const cookieName = firstPart.substring(0, equalIndex).trim();
-              const cookieValue = firstPart.substring(equalIndex + 1).trim();
+                if (!name) return;
 
-              if (!cookieName || ['path', 'expires', 'domain', 'max-age', 'secure', 'httponly', 'samesite'].includes(cookieName.toLowerCase())) {
-                return;
-              }
+                const options: {
+                  httpOnly?: boolean;
+                  path?: string;
+                  secure?: boolean;
+                  maxAge?: number;
+                } = {
+                  httpOnly,
+                  path: path || '/',
+                  secure,
+                };
 
-              const options: {
-                httpOnly?: boolean;
-                path?: string;
-                secure?: boolean;
-                maxAge?: number;
-              } = {
-                httpOnly: cookieStr.toLowerCase().includes('httponly'),
-                path: '/',
-                secure: cookieStr.toLowerCase().includes('secure'),
-              };
-
-              parts.forEach((part) => {
-                const lowerPart = part.toLowerCase();
-                if (lowerPart.startsWith('path=')) {
-                  options.path = part.substring(5).trim();
+                if (maxAge !== undefined) {
+                  options.maxAge = maxAge;
                 }
-                if (lowerPart.startsWith('max-age=')) {
-                  options.maxAge = parseInt(part.substring(8).trim(), 10);
-                }
+
+                nextResponse.cookies.set(name, value, options);
               });
-
-              nextResponse.cookies.set(cookieName, cookieValue, options);
             });
           }
           
@@ -108,6 +99,8 @@ export const config = {
     '/sign-up',
   ],
 };
+
+
 
 
 
