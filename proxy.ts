@@ -3,15 +3,6 @@ import type { NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { parseSetCookie } from 'cookie';
 
-interface SimpleCookie {
-  name?: string;
-  value?: string;
-  path?: string;
-  maxAge?: number;
-  httpOnly?: boolean;
-  secure?: boolean;
-}
-
 const privateRoutes = ['/profile', '/notes'];
 const publicRoutes = ['/sign-in', '/sign-up'];
 
@@ -54,12 +45,10 @@ export async function proxy(request: NextRequest) {
           const setCookieHeader = refreshResponse.headers.get('set-cookie');
           
           if (setCookieHeader) {
-            const cookieStrings = setCookieHeader.split(',').map(s => s.trim());
+            const cookieStrings = setCookieHeader.split(/,(?=[^;]*=)/).map(s => s.trim());
 
             cookieStrings.forEach((cookieStr) => {
-
-              const cookieItem = parseSetCookie(cookieStr) as unknown as SimpleCookie;
-              
+              const cookieItem = parseSetCookie(cookieStr);
               if (!cookieItem || !cookieItem.name) return;
 
               const options: {
@@ -78,7 +67,6 @@ export async function proxy(request: NextRequest) {
               }
 
               const targetValue = cookieItem.value || '';
-
               nextResponse.cookies.set(cookieItem.name, targetValue, options);
             });
           }
@@ -107,6 +95,7 @@ export const config = {
     '/sign-up',
   ],
 };
+
 
 
 
